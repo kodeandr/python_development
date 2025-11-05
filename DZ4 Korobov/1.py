@@ -1,3 +1,4 @@
+
 from pydantic import BaseModel, EmailStr
 
 class Book(BaseModel):
@@ -10,3 +11,4 @@ class User(BaseModel):
     name: str
     email: EmailStr
     membership_id: str
+
