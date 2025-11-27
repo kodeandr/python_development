@@ -1,0 +1,119 @@
+from pydantic import BaseModel, EmailStr, validator
+from typing import List, Optional
+from datetime import datetime
+import functools
+import logging
+
+# ### Задача 1. Базовые модели ###
+
+class Book(BaseModel):
+    title: str
+    author: str
+    year: int
+    available: bool = True
+
+class User(BaseModel):
+    name: str
+    email: EmailStr
+    membership_id: str
+
+# ### Задача 2. Функции с аннотациями типов ###
+
+library = {"books": [], "users": []}
+
+def add_book(book: Book) -> None:
+    library["books"].append(book)
+    print(f"Книга '{book.title}' успешно добавлена.")
+
+def find_book(title: str) -> Optional[Book]:
+    return next((b for b in library["books"] if b.title == title), None)
+
+def is_book_borrow(user: User, book_title: str) -> bool:
+    book = find_book(book_title)
+    if not book or not book.available:
+        raise Exception("Книга временно недоступна")
+    else:
+        book.available = False
+        return True
+
+def return_book(book_title: str) -> bool:
+    book = find_book(book_title)
+    if book:
+        book.available = True
+        return True
+    return False
+
+# ### Задача 3. Расширенная модель и валидация ###
+
+class ExtendedBook(Book):
+    categories: List[str]
+
+    @validator('categories')
+    def validate_categories(cls, value):
+        if len(value) > 5:
+            raise ValueError("Количество категорий должно быть меньше пяти.")
+        return value
+
+class Library(BaseModel):
+    books: List[ExtendedBook]
+    users: List[User]
+
+    def total_books(self) -> int:
+        return len(self.books)
+
+# ### Задача 4. Обработка ошибок и исключения ###
+
+class BookNotAvailable(Exception):
+    pass
+
+def is_book_borrow_with_exception(user: User, book_title: str) -> bool:
+    book = find_book(book_title)
+    if not book or not book.available:
+        raise BookNotAvailable("Книга временно недоступна")
+    else:
+        book.available = False
+        return True
+
+# Декоратор для логирования операций с книгами
+logging.basicConfig(level=logging.INFO)
+
+def log_operation(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        start_time = datetime.now()
+        result = func(*args, **kwargs)
+        end_time = datetime.now()
+        execution_time = (end_time - start_time).total_seconds()
+        logging.info(f"{func.__name__}(*{args}, **{kwargs}) выполнено за {execution_time:.2f} секунд. Результат: {result}")
+        return result
+    return wrapper
+
+# Применим декоратор к функции возврата книги
+@log_operation
+def return_book_logged(book_title: str) -> bool:
+    return return_book(book_title)
+
+# Демонстрация работы функций и декораторов
+if __name__ == "__main__":
+    # Добавляем книгу
+    new_book = ExtendedBook(title="Война и мир", author="Лев Толстой", year=1869, categories=["классика", "роман"])
+    add_book(new_book)
+
+    # Регистрация пользователя
+    new_user = User(name="Алексей Иванов", email="alexey@example.ru", membership_id="U12345")
+    library["users"].append(new_user)
+
+    # Берем книгу в аренду
+    try:
+        borrowed = is_book_borrow_with_exception(new_user, "Война и мир")
+        print(f"Книга {'взята' if borrowed else 'не взята'} в аренду.")
+    except BookNotAvailable as e:
+        print(str(e))
+
+    # Возвращаем книгу
+    returned = return_book_logged("Война и мир")
+    print(f"Книга {'возвращена' if returned else 'не возвращена'}.")
+
+    # Получаем общий счётчик книг
+    lib = Library(books=library['books'], users=library['users'])
+    print(f"В библиотеке находится {lib.total_books()} книг.")
