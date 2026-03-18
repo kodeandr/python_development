@@ -1,5 +1,11 @@
-from .currency_converter import CurrencyConverter
-from .usd_cny_converter import UsdCnyConverter
-from .usd_rub_converter import UsdRubConverter
-from .usd_eur_converter import UsdEurConverter
-from .usd_gbp_converter import UsdGbpConverter
+from .usd_to_eur import USDToEURConverter
+from .usd_to_gbp import USDToGBPConverter
+from .usd_to_rub import USDToRUBConverter
+from .usd_to_cny import USDToCNYConverter
+
+__all__ = [
+    "USDToEURConverter",
+    "USDToGBPConverter",
+    "USDToRUBConverter",
+    "USDToCNYConverter",
+]
