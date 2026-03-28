@@ -1,1 +1,4 @@
 exchange_rates.json
+__pycache__/
+*.pyc
+exchange_rates.json
